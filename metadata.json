@@ -1,0 +1,5 @@
+{
+  "name": "HealthChain DApp",
+  "description": "A modern, futuristic, distributed healthcare record system using Blockchain, IPFS, and gRPC visualization.",
+  "requestFramePermissions": []
+}

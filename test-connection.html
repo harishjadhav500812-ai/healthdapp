@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HealthChain Backend Connection Test</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .test-section {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        .success {
+            background: rgba(76, 175, 80, 0.3);
+            border-left: 4px solid #4CAF50;
+        }
+        .error {
+            background: rgba(244, 67, 54, 0.3);
+            border-left: 4px solid #f44336;
+        }
+        .pending {
+            background: rgba(255, 193, 7, 0.3);
+            border-left: 4px solid #FFC107;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+            margin: 10px 0;
+            transition: all 0.3s;
+        }
+        button:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        button:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .response {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .form-group {
+            margin: 15px 0;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        .info {
+            background: rgba(33, 150, 243, 0.3);
+            border-left: 4px solid #2196F3;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1></h1>🏥 HealthChain Backend Connection Test</h1>
+
+        <div class="info">
+            <strong>Backend URL:</strong> http://localhost:5000<br>
+            <strong>Purpose:</strong> Test if your frontend can connect to the backend
+        </div>
+
+        <!-- Test 1: Health Check -->
+        <div class="test-section">
+            <h2>Test 1: Backend Health Check</h2>
+            <button onclick="testHealth()">Run Health Check</button>
+            <div id="health-status"></div>
+        </div>
+
+        <!-- Test 2: Signup -->
+        <div class="test-section">
+            <h2>Test 2: User Signup</h2>
+            <div class="form-group">
+                <label>Name:</label>
+                <input type="text" id="signup-name" value="Test Patient">
+            </div>
+            <div class="form-group">
+                <label>Email:</label>
+                <input type="email" id="signup-email" value="">
+            </div>
+            <div class="form-group">
+                <label>Password:</label>
+                <input type="password" id="signup-password" value="password123">
+            </div>
+            <div class="form-group">
+                <label>Age:</label>
+                <input type="number" id="signup-age" value="30">
+            </div>
+            <button onclick="testSignup()">Test Signup</button>
+            <div id="signup-status"></div>
+        </div>
+
+        <!-- Test 3: Login -->
+        <div class="test-section">
+            <h2>Test 3: User Login</h2>
+            <div class="form-group">
+                <label>Email:</label>
+                <input type="email" id="login-email" value="test123@test.com">
+            </div>
+            <div class="form-group">
+                <label>Password:</label>
+                <input type="password" id="login-password" value="password123">
+            </div>
+            <button onclick="testLogin()">Test Login</button>
+            <div id="login-status"></div>
+        </div>
+
+        <!-- Test 4: CORS Check -->
+        <div class="test-section">
+            <h2>Test 4: CORS Configuration</h2>
+            <button onclick="testCORS()">Check CORS</button>
+            <div id="cors-status"></div>
+        </div>
+
+        <!-- Run All Tests -->
+        <div class="test-section">
+            <h2>🚀 Run All Tests</h2>
+            <button onclick="runAllTests()" style="background: #FF9800;">Run All Tests</button>
+            <div id="all-tests-status"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:5000';
+
+        // Generate random email on page load
+        document.getElementById('signup-email').value = `test${Math.floor(Math.random() * 10000)}@test.com`;
+
+        // Test 1: Health Check
+        async function testHealth() {
+            const statusDiv = document.getElementById('health-status');
+            statusDiv.innerHTML = '<div class="status pending">⏳ Testing...</div>';
+
+            try {
+                const response = await fetch(`${API_URL}/health`);
+                const data = await response.json();
+
+                if (data.success) {
+                    statusDiv.innerHTML = `
+                        <div class="status success">✅ SUCCESS - Backend is running!</div>
+                        <div class="response">${JSON.stringify(data, null, 2)}</div>
+                    `;
+                } else {
+                    statusDiv.innerHTML = `
+                        <div class="status error">❌ ERROR - Unexpected response</div>
+                        <div class="response">${JSON.stringify(data, null, 2)}</div>
+                    `;
+                }
+            } catch (error) {
+                statusDiv.innerHTML = `
+                    <div class="status error">❌ ERROR - Cannot connect to backend</div>
+                    <div class="response">Error: ${error.message}
+
+Common Solutions:
+1. Make sure backend is running: cd backend && npm run dev
+2. Check if backend is on port 5000
+3. Verify .env file in backend folder
+4. Check for CORS issues</div>
+                `;
+            }
+        }
+
+        // Test 2: Signup
+        async function testSignup() {
+            const statusDiv = document.getElementById('signup-status');
+            statusDiv.innerHTML = '<div class="status pending">⏳ Testing signup...</div>';
+
+            const name = document.getElementById('signup-name').value;
+            const email = document.getElementById('signup-email').value;
+            const password = document.getElementById('signup-password').value;
+            const age = parseInt(document.getElementById('signup-age').value);
+
+            try {
+                const response = await fetch(`${API_URL}/api/auth/signup`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        name: name,
+                        email: email,
+                        password: password,
+                        role: 'PATIENT',
+                        age: age
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    statusDiv.innerHTML = `
+                        <div class="status success">✅ SUCCESS - User created!</div>
+                        <div class="response">User ID: ${data.user._id}
+Name: ${data.user.name}
+Email: ${data.user.email}
+Token: ${data.token.substring(0, 30)}...
+
+Now you can use this email to test login!</div>
+                    `;
+                    // Update login email field
+                    document.getElementById('login-email').value = email;
+                } else {
+                    statusDiv.innerHTML = `
+                        <div class="status error">❌ ERROR - ${data.message}</div>
+                        <div class="response">${JSON.stringify(data, null, 2)}</div>
+                    `;
+                }
+            } catch (error) {
+                statusDiv.innerHTML = `
+                    <div class="status error">❌ ERROR - Cannot connect to backend</div>
+                    <div class="response">Error: ${error.message}</div>
+                `;
+            }
+        }
+
+        // Test 3: Login
+        async function testLogin() {
+            const statusDiv = document.getElementById('login-status');
+            statusDiv.innerHTML = '<div class="status pending">⏳ Testing login...</div>';
+
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+
+            try {
+                const response = await fetch(`${API_URL}/api/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        email: email,
+                        password: password
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    statusDiv.innerHTML = `
+                        <div class="status success">✅ SUCCESS - Login successful!</div>
+                        <div class="response">User: ${data.user.name}
+Email: ${data.user.email}
+Role: ${data.user.role}
+Token: ${data.token.substring(0, 30)}...
+
+✅ Your backend is working perfectly!</div>
+                    `;
+                } else {
+                    statusDiv.innerHTML = `
+                        <div class="status error">❌ ERROR - ${data.message}</div>
+                        <div class="response">${JSON.stringify(data, null, 2)}
+
+Note: Make sure you created this user first in Test 2</div>
+                    `;
+                }
+            } catch (error) {
+                statusDiv.innerHTML = `
+                    <div class="status error">❌ ERROR - Cannot connect to backend</div>
+                    <div class="response">Error: ${error.message}</div>
+                `;
+            }
+        }
+
+        // Test 4: CORS
+        async function testCORS() {
+            const statusDiv = document.getElementById('cors-status');
+            statusDiv.innerHTML = '<div class="status pending">⏳ Testing CORS...</div>';
+
+            try {
+                const response = await fetch(`${API_URL}/api/auth/me`, {
+                    headers: {
+                        'Authorization': 'Bearer invalid_token'
+                    }
+                });
+
+                // If we get ANY response, CORS is working
+                statusDiv.innerHTML = `
+                    <div class="status success">✅ SUCCESS - CORS is configured correctly!</div>
+                    <div class="response">Your frontend can communicate with the backend.
+Status: ${response.status}
+
+This means:
+- Backend is accessible from browser
+- CORS_ORIGIN is set correctly
+- No cross-origin issues</div>
+                `;
+            } catch (error) {
+                if (error.message.includes('CORS')) {
+                    statusDiv.innerHTML = `
+                        <div class="status error">❌ ERROR - CORS is blocking requests</div>
+                        <div class="response">Error: ${error.message}
+
+Fix:
+1. Edit backend/.env
+2. Set: CORS_ORIGIN=http://localhost:5173
+3. Restart backend server</div>
+                    `;
+                } else {
+                    statusDiv.innerHTML = `
+                        <div class="status error">❌ ERROR - Cannot connect</div>
+                        <div class="response">Error: ${error.message}
+
+Make sure backend is running on port 5000</div>
+                    `;
+                }
+            }
+        }
+
+        // Run all tests
+        async function runAllTests() {
+            const statusDiv = document.getElementById('all-tests-status');
+            statusDiv.innerHTML = '<div class="status pending">⏳ Running all tests...</div>';
+
+            await testHealth();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+            await testCORS();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+            await testSignup();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+            await testLogin();
+
+            statusDiv.innerHTML = '<div class="status success">✅ All tests completed! Check results above.</div>';
+        }
+
+        // Auto-run health check on page load
+        window.onload = function() {
+            testHealth();
+        };
+    </script>
+</body>
+</html>
